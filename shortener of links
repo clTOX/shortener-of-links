@@ -1,0 +1,63 @@
+import sqlite3
+from random import *
+from flask import Flask,request
+
+def short(a):
+    lang = 10
+    short_link=''.join([choice(list(
+        '0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'
+    )) for x in range(lang)])
+    #print(short_link)
+    try:
+        db_connection = sqlite3.connect("./db.db")
+        db=db_connection.cursor()
+        sql_insert = """INSERT INTO urls (long,short) VALUES (?,?)"""
+        data_tuple=(a,short_link)
+        db.execute(sql_insert,data_tuple)
+        db_connection.commit()
+        db.close()
+    except Exception as e:
+        print(e)
+    finally:
+        if db_connection:
+            db_connection.close()
+
+short("https://ya.ru/kupit/tovar/1234")
+def long(a):
+    try:
+        db_connection = sqlite3.connect("./db.db")
+        db=db_connection.cursor()
+        sql_read=f"""SELECT * FROM urls WHERE short='{a}' """
+        db.execute(sql_read)
+        records=db.fetchall()
+        db.close()
+    except Exception as e:
+        print(e)
+    finally:
+        if db_connection:
+            db_connection.close()
+    return records
+#if results:
+    #for x in results:
+        #print('Ссылка: ',x[1])
+        #short("https://ya.ru/kupit/tovar/1234")
+app =Flask(__name__)
+@app.route('/short')
+def start():
+    try:
+        get_url=request.args['url']
+        print(short(get_url))
+    except:
+        pass
+
+@app.route('/long')
+def end():
+    try:
+        get_url=request.args['url']
+        results = long(get_url)
+        if results:
+            for x in results:
+                return f"<a href='{x[1]}'>{x[1]}</a>"
+    except:
+        pass
+app.run(debug=True,host="",port=5000)
